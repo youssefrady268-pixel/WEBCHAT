@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق محادثة مع الأصدقاء - Firebase</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* شاشة تسجيل الدخول */
+        #auth-screen {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        #auth-screen h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        #auth-screen input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            font-size: 15px;
+        }
+
+        #auth-screen button {
+            width: 100%;
+            padding: 12px;
+            background: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #auth-screen button:hover {
+            background: #006edd;
+        }
+
+        /* تطبيق المحادثة الرئيسي */
+        .app-container {
+            display: none; /* مخفي حتى يتم تسجيل الدخول */
+            width: 900px;
+            max-width: 100%;
+            height: 85vh;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* الشريط الجانبي (الأصدقاء والبحث) */
+        .sidebar {
+            width: 35%;
+            background: #f8f9fa;
+            border-left: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-profile {
+            padding: 15px 20px;
+            background: #0084ff;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .search-box {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 13px;
+        }
+
+        .friends-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .friend-item {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #e9ecef;
+            transition: background 0.2s;
+        }
+
+        .friend-item:hover, .friend-item.active {
+            background: #e4e6eb;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #0084ff;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-left: 12px;
+        }
+
+        .friend-info h4 {
+            font-size: 15px;
+            color: #333;
+        }
+
+        .friend-info p {
+            font-size: 12px;
+            color: #777;
+            margin-top: 3px;
+        }
+
+        /* نافذة الدردشة الرئيسية */
+        .chat-main {
+            width: 65%;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f4f7f6;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .message.incoming {
+            background: #ffffff;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-right-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message.outgoing {
+            background: #0084ff;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-left-radius: 3px;
+        }
+
+        .message .time {
+            font-size: 9px;
+            color: #888;
+            display: block;
+            margin-top: 4px;
+            text-align: left;
+        }
+
+        .message.outgoing .time {
+            color: #d0e1fd;
+        }
+
+        .chat-input-area {
+            padding: 15px 20px;
+            background: #fff;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input-area button {
+            background: #0084ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .chat-input-area button:hover {
+            background: #006edd;
+        }
+
+        .placeholder-chat {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #888;
+            font-size: 16px;
+            background: #f4f7f6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="auth-screen">
+        <h2>تسجيل الدخول</h2>
+        <input type="text" id="login-username" placeholder="اكتب اسمك للبدء..." autocomplete="off">
+        <button id="login-btn">دخول للمحادثة</button>
+    </div>
+
+    <!-- واجهة التطبيق الرئيسية (مخفية بالبداية) -->
+    <div class="app-container" id="app-container" style="display: none;">
+        
+        <!-- الشريط الجانبي -->
+        <div class="sidebar">
+            <div class="user-profile">
+                <span id="current-user-display">الاسم</span>
+                <span style="font-size: 11px; background: rgba(255,255,255,0.2); padding: 3px 6px; border-radius: 5px;">متصل</span>
+            </div>
+            
+            <!-- خانة البحث عن الأصدقاء -->
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="بحث عن صديق أو إضافة اسم...">
+            </div>
+
+            <!-- قائمة الأصدقاء أو المستخدمين -->
+            <ul class="friends-list" id="friends-list">
+                <!-- سيتم تعبئتها ديناميكياً -->
+            </ul>
+        </div>
+
+        <!-- نافذة المحادثة -->
+        <div class="chat-main" id="chat-main-area">
+            <div class="placeholder-chat">اختر صديقاً من القائمة أو ابحث عنه لبدء المحادثة</div>
+        </div>
+
+    </div>
+
+    <!-- كود فايربيس وتبريد التطبيق -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, set, get, push, onChildAdded, child } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // إعدادات مشروعك المأخوذة من لقطة الشاشة (Firebase Console)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDahbSahX4uB5RLi09-zWNaEmRA3CHuCs",
+            authDomain: "sguygyus.firebaseapp.com",
+            databaseURL: "https://sguygyus-default-rtdb.firebaseio.com",
+            projectId: "sguygyus",
+            storageBucket: "sguygyus.firebasestorage.app",
+            messagingSenderId: "549683927076",
+            appId: "1:549683927076:web:73491909c4427b742260b1",
+            measurementId: "G-XG9CYVNWF3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentUser = "";
+        let activeChatRoom = null;
+        let messageListener = null;
+
+        const authScreen = document.getElementById('auth-screen');
+        const appContainer = document.getElementById('app-container');
+        const loginBtn = document.getElementById('login-btn');
+        const loginUsername = document.getElementById('login-username');
+        const currentUserDisplay = document.getElementById('current-user-display');
+        const friendsList = document.getElementById('friends-list');
+        const searchInput = document.getElementById('search-input');
+        const chatMainArea = document.getElementById('chat-main-area');
+
+        // تسجيل الدخول وحفظ حساب المستخدم في القاعدة
+        loginBtn.addEventListener('click', () => {
+            const username = loginUsername.value.trim();
+            if (username === '') {
+                alert('الرجاء إدخال اسم صحيح');
+                return;
+            }
+
+            currentUser = username;
+            currentUserDisplay.textContent = currentUser;
+
+            // حفظ الحساب في قاعدة البيانات ضمن جدول users
+            set(ref(db, 'users/' + currentUser), {
+                username: currentUser,
+                lastLogin: new Date().toISOString()
+            }).then(() => {
+                authScreen.style.display = 'none';
+                appContainer.style.display = 'flex';
+                loadUsers('');
+            });
+        });
+
+        // تحميل وعرض المستخدمين مع إمكانية البحث (بحث دقيق)
+        function loadUsers(filterText = '') {
+            const usersRef = ref(db, 'users');
+            get(usersRef).then((snapshot) => {
+                friendsList.innerHTML = '';
+                if (snapshot.exists()) {
+                    snapshot.forEach((childSnapshot) => {
+                        const userData = childSnapshot.val();
+                        const username = userData.username;
+
+                        // لا تعرض نفسك في قائمة الأصدقاء
+                        if (username === currentUser) return;
+
+                        // تصفية نتائج البحث الدقيق
+                        if (filterText && !username.toLowerCase().includes(filterText.toLowerCase())) {
+                            return;
+                        }
+
+                        const li = document.createElement('li');
+                        li.className = 'friend-item';
+                        li.innerHTML = `
+                            <div class="avatar">${username.charAt(0).toUpperCase()}</div>
+                            <div class="friend-info">
+                                <h4>${username}</h4>
+                                <p>انقر لبدء المحادثة</p>
+                            </div>
+                        `;
+
+                        li.addEventListener('click', () => {
+                            document.querySelectorAll('.friend-item').forEach(el => el.classList.remove('active'));
+                            li.classList.add('active');
+                            openChatWith(username);
+                        });
+
+                        friendsList.appendChild(li);
+                    });
+                }
+            });
+        }
+
+        // تفاعل البحث الفوري
+        searchInput.addEventListener('input', (e) => {
+            loadUsers(e.target.value.trim());
+        });
+
+        // فتح نافذة الدردشة الخاصة مع صديق معين
+        function openChatWith(friendName) {
+            activeChatRoom = [currentUser, friendName].sort().join('_'); // غرفة دردشة فريدة بين الاثنين
+
+            chatMainArea.innerHTML = `
+                <div class="chat-header">محادثة مع: ${friendName}</div>
+                <div class="chat-messages" id="messages-container"></div>
+                <form class="chat-input-area" id="chat-form">
+                    <input type="text" id="message-input" placeholder="اكتب رسالتك هنا..." required autocomplete="off">
+                    <button type="submit">إرسال</button>
+                </form>
+            `;
+
+            const messagesContainer = document.getElementById('messages-container');
+            const chatForm = document.getElementById('chat-form');
+            const messageInput = document.getElementById('message-input');
+
+            const chatRoomRef = ref(db, 'chats/' + activeChatRoom);
+
+            // جلب وعرض رسائل هذه الغرفة فقط
+            onChildAdded(chatRoomRef, (snapshot) => {
+                const msg = snapshot.val();
+                const messageDiv = document.createElement('div');
+                const isOutgoing = msg.sender === currentUser;
+
+                messageDiv.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+                messageDiv.innerHTML = `
+                    ${escapeHtml(msg.text)}
+                    <span class="time">${msg.timestamp || ''}</span>
+                `;
+
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+
+            // إرسال رسالة جديدة وحفظها في قاعدة البيانات
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = messageInput.value.trim();
+                if (text === '') return;
+
+                push(chatRoomRef, {
+                    sender: currentUser,
+                    text: text,
+                    timestamp: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                });
+
+                messageInput.value = '';
+            });
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
